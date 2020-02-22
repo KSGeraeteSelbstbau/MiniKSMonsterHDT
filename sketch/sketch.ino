@@ -9,14 +9,23 @@
 
 ********************************************/
 
-#include "SSD1306Ascii.h"                 // ascii library for Oled
-#include "SSD1306AsciiAvrI2c.h"
+#define OLED_DISPLAY                        //Comment out in case a 1602 LCD is used as display
+// #define MINUTES                           //Uncomment if you want minutes instead of seconds for polarity change
+
+#ifdef OLED_DISPLAY
+  #include "SSD1306Ascii.h"                 // ascii library for Oled
+  #include "SSD1306AsciiAvrI2c.h"
+  #define I2C_ADDRESS 0x3C                  // 0X3C+SA0 - 0x3C or 0x3D
+  SSD1306AsciiAvrI2c oled;                  // create short alias
+#else
+  //LCD
+  #include <Wire.h>
+  #include <LiquidCrystal_I2C.h>
+  #define I2C_ADDRESS 0x3F                 // 0x27 
+  LiquidCrystal_I2C lcd(I2C_ADDRESS, 16, 2);
+#endif
 
 #include <EEPROM.h>                       // EEPROM library
-
-#define I2C_ADDRESS 0x3C                  // 0X3C+SA0 - 0x3C or 0x3D
-
-SSD1306AsciiAvrI2c oled;                  // create short alias
 
 #define SWL 6                             // switch def. left, middle, right
 #define SWM 7
@@ -33,7 +42,7 @@ float liter = 0.25;                       // set some start values
 float ppm = 50;                           // wished ppm
 
 boolean polaritaet = true;
-boolean wassertest = false;               // water quality test default is disable
+boolean wassertest = true;                // water quality test default is disable
 boolean display = true;                   // display enable
 float akt_ppm = 0;
 char text[32];
@@ -101,17 +110,27 @@ void setup() {
   pinMode(POLW, OUTPUT);
   digitalWrite(POLW, LOW);                // start value low
 
-  oled.begin(&Adafruit128x64, I2C_ADDRESS);// setup Oled
-  oled.setContrast(100);                  // contrast adjustment
-  oled.clear();
-  oled.set2X();
-  oled.setFont(X11fixed7x14B);
-  oled.println(" Mini KS");               // start message
-  oled.println(" Monster");
-  oled.set1X();
-  oled.setFont(fixed_bold10x15);
-  delay(2000);                            // 2 sec. are enough
-
+  #ifdef OLED_DISPLAY
+    oled.begin(&Adafruit128x64, I2C_ADDRESS);// setup Oled
+    oled.setContrast(100);                  // contrast adjustment
+    oled.clear();
+    oled.set2X();
+    oled.setFont(X11fixed7x14B);
+    oled.println(" Mini KS");               // start message
+    oled.println(" Monster");
+    oled.set1X();
+    oled.setFont(fixed_bold10x15);
+    delay(2000);                            // 2 sec. are enough
+  #else
+    lcd.init();                            // setup LCD
+    lcd.backlight();                        // backlight on
+    lcd.clear();
+    lcd.print(" Mini KS");                // start message
+    lcd.setCursor (0,1);
+    lcd.print(" Monster");
+    delay(2000);                            // 2 sec. are enough
+  #endif
+  
   analogReference(EXTERNAL);              // analog Reference external 2.5V
 
   int eeAddress = 1;                      // read EEPROM
@@ -143,84 +162,188 @@ uint8_t lese_tasten(void) {               // function reads switches and returns
 }
 
 void print_wassermenge(float liter) {     // 1. display output - amount of water
-  oled.clear();
-  oled.setCursor(3, 0);
-  oled.print("Wassermenge");
-  oled.setCursor(8, 4);
-  oled.print(liter);
-  oled.print(" Liter");
-
+  #ifdef OLED_DISPLAY
+    oled.clear();
+    oled.setCursor(3, 0);
+    oled.print("Wassermenge");
+    oled.setCursor(8, 4);
+    oled.print(liter);
+    oled.print(" Liter");
+  #else
+    //LCD
+    lcd.clear();
+    lcd.print("Wassermenge");
+    lcd.setCursor(0, 1);
+    lcd.print(liter);
+    lcd.print(" Liter");
+  #endif
 }
 
 void print_ppm(float ppm) {               // 2. display output - wished ppm
-  oled.clear();
-  oled.setCursor(9, 0);
-  oled.print("KS Staerke");
-  oled.setCursor(29, 4);
-  oled.print((int)ppm);
-  oled.print(" ppm ");
+  #ifdef OLED_DISPLAY
+    oled.clear();
+    oled.setCursor(9, 0);
+    oled.print("KS Staerke");
+    oled.setCursor(29, 4);
+    oled.print((int)ppm);
+    oled.print(" ppm ");
+  #else
+    //LCD
+    lcd.clear();
+    lcd.print("KS Staerke");
+    lcd.setCursor(0, 1);
+    lcd.print((int)ppm);
+    lcd.print(" ppm ");
+  #endif
 }
 
 void print_polw1(unsigned int polwechselzeit1) {
-  oled.clear();                           // 3. display output - change polarioty time
-  oled.setCursor(4, 0);
-  oled.print("Umpolzeit 1");
-  oled.setCursor(26, 4);
-  oled.print(polwechselzeit1);
-  oled.print(" Sek.");
+  #ifdef OLED_DISPLAY
+    oled.clear();                           // 3. display output - change polarioty time
+    oled.setCursor(4, 0);
+    oled.print("Umpolzeit 1");
+    oled.setCursor(26, 4);
+    oled.print(polwechselzeit1);
+    #ifdef MINUTES
+      oled.print(" Min.");
+    #else
+      oled.print(" Sek.");
+    #endif
+  #else
+    //LCD
+    lcd.clear();                           // 3. display output - change polarioty time
+    lcd.print("Umpolzeit 1");
+    lcd.setCursor(0, 1);
+    lcd.print(polwechselzeit1);
+    #ifdef MINUTES
+      lcd.print(" Min.");
+    #else
+      lcd.print(" Sek.");
+    #endif
+  #endif
 }
 
 void print_schwelle(float polwechselschwelle) {
-  oled.clear();                           // 4. display output - change polarioty time
-  oled.setCursor(4, 0);
-  oled.print(" Schwelle");
-  oled.setCursor(26, 4);
-  oled.print(polwechselschwelle);
-  oled.print(" mA");
+  #ifdef OLED_DISPLAY
+    oled.clear();                           // 4. display output - change polarioty time
+    oled.setCursor(4, 0);
+    oled.print(" Schwelle");
+    oled.setCursor(26, 4);
+    oled.print(polwechselschwelle);
+    oled.print(" mA");
+  #else
+    //LCD
+    lcd.clear();                           // 4. display output - change polarioty time
+    lcd.print("Schwelle");
+    lcd.setCursor(0, 1);
+    lcd.print(polwechselschwelle);
+    lcd.print(" mA");
+   #endif
 }
 
 void print_polw2(unsigned int polwechselzeit2) {
-  oled.clear();                           // 5. display output - change polarioty time
-  oled.setCursor(4, 0);
-  oled.print("Umpolzeit 2");
-  oled.setCursor(26, 4);
-  oled.print(polwechselzeit2);
-  oled.print(" Sek.");
+  #ifdef OLED_DISPLAY
+    oled.clear();                           // 5. display output - change polarioty time
+    oled.setCursor(4, 0);
+    oled.print("Umpolzeit 2");
+    oled.setCursor(26, 4);
+    oled.print(polwechselzeit2);
+    #ifdef MINUTES
+      oled.print(" Min.");
+    #else
+      oled.print(" Sek.");
+    #endif
+  #else
+    //LCD
+    lcd.clear();                           // 5. display output - change polarioty time
+    lcd.print("Umpolzeit 2");
+    lcd.setCursor(0, 1);
+    lcd.print(polwechselzeit2);
+    #ifdef MINUTES
+      lcd.print(" Min.");
+    #else
+      lcd.print(" Sek.");
+    #endif
+  #endif
 }
 void print_wassertest(void) {             // 6. display output - water quality test and Start question
-  oled.clear();
-
-  if (wassertest) {
-    oled.setCursor(0, 0);
-    oled.print("Wassertest: ");
-    digitalWrite(START, LOW);
-    delay(200);
-    adc_wert_a1 = analogRead(1);
-    strom_wassertest = (float) (adc_wert_a1 * schrittweite_adc);
-    delay(200);
-    oled.setCursor(0, 2);
-    if (strom_wassertest < schwellenwert_wassertest) {
-      oled.print("OK");
+  #ifdef OLED_DISPLAY
+    oled.clear();
+    if (wassertest) {
+      oled.setCursor(0, 0);
+      oled.print("Wassertest: ");
+      digitalWrite(START, LOW);
+      delay(200);
+      adc_wert_a1 = 0;
+      for (int i = 1; i <= 10; i++) {
+        delay(20);
+        adc_wert_a1 = adc_wert_a1 + analogRead(1);
+      }
+      adc_wert_a1 = adc_wert_a1 / 10;
+      strom_wassertest = (float) (adc_wert_a1 * schrittweite_adc);
+      strom_wassertest = (strom_wassertest / shunt);
+      delay(200);
+      oled.setCursor(0, 2);
+      if (strom_wassertest < schwellenwert_wassertest) {
+       oled.print("OK ");
+       oled.print(strom_wassertest);
+       oled.print(" mA");
+      } else {
+       oled.print("NOK ");
+       oled.print(strom_wassertest);
+       oled.print(" mA");
+      }
+      delay(200);
+      digitalWrite(START, HIGH);
+      oled.setCursor(0, 4);
+      oled.set2X();
+      oled.print("Start?");
+      oled.set1X();
     } else {
-      oled.print("Mangelhaft");
+      oled.setCursor(0, 2);
+      oled.set2X();
+      oled.print("Start?");
+      oled.set1X();
     }
-    delay(200);
-    digitalWrite(START, HIGH);
-    oled.setCursor(0, 4);
-    oled.set2X();
-    oled.print("Start?");
-    oled.set1X();
-  } else {
-    oled.setCursor(0, 2);
-    oled.set2X();
-    oled.print("Start?");
-    oled.set1X();
-  }
+  #else
+    lcd.clear();
+    if (wassertest) {
+      lcd.setCursor(0, 0);
+      lcd.print("Wassertest: ");
+      digitalWrite(START, LOW);
+      delay(200);
+      adc_wert_a1 = 0;
+      for (int i = 1; i <= 10; i++) {
+        delay(20);
+        adc_wert_a1 = adc_wert_a1 + analogRead(1);
+      }
+      adc_wert_a1 = adc_wert_a1 / 10;
+      strom_wassertest = (float) (adc_wert_a1 * schrittweite_adc);
+      strom_wassertest = (strom_wassertest / shunt);
+      delay(200);
+      if (strom_wassertest < schwellenwert_wassertest) {
+        lcd.print("OK");
+      } else {
+        lcd.print("NOK");
+      }
+      delay(200);
+      digitalWrite(START, HIGH);
+      lcd.setCursor(0, 1);
+      lcd.print("Start?");
+      } else {
+      lcd.print("Start?");
+      }
+    #endif
 }
 
 void erste_zeile_clean() {                // Clean first line
-  oled.home();
-  oled.print("                 ");
+  #ifdef OLED_DISPLAY
+    oled.home();
+    oled.print("                 ");
+  #else
+    lcd.home();
+    lcd.print("                 ");
+  #endif
 }
 
 void zweiSekunden(void) {                 // 2 sec. delay but reads left and right switch
@@ -280,28 +403,50 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
   ppm = masse2ppm(masse, liter);
   
   if (display) {
-    oled.setCursor(18, 0);                 // Oled 1. row
-    sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
-    oled.print(stringbuf);
-    oled.setCursor(18, 2);                 // Oled 2. row
-    oled.print(ppm);
-    oled.print(" ppm    ");
-    oled.setCursor(18, 4);                 // Oled 3. row
-    if (lese_tasten() == 2) {
-      oled.print((int)(spannung * 67.76)); // factor measured voltage divider
-      oled.print(" Volt      ");
-
+    #ifdef OLED_DISPLAY
+      oled.setCursor(18, 0);                 // Oled 1. row
+      sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
+      oled.print(stringbuf);
+      oled.setCursor(18, 2);                 // Oled 2. row
+      oled.print(ppm);
+      oled.print(" ppm    ");
+      oled.setCursor(18, 4);                 // Oled 3. row
+      if (lese_tasten() == 2) {
+        oled.print((int)(spannung * 67.76)); // factor measured voltage divider
+        oled.print(" Volt      ");
+      } else {
+        oled.print(mah);
+        oled.print(" mAh       ");
+      }
+      oled.setCursor(18, 6);                 // Oled 4. row
+      oled.print(strom_mess);
+      oled.print(" mA ");
     } else {
-      oled.print(mah);
-      oled.print(" mAh       ");
+      oled.clear();
     }
-    oled.setCursor(18, 6);                 // Oled 4. row
-    oled.print(strom_mess);
-    oled.print(" mA ");
-
-  } else {
-    oled.clear();
-  }
+    #else
+      lcd.print("T ");                 
+      sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
+      lcd.print(stringbuf);
+      lcd.setCursor(11, 0);
+      lcd.print("P ");           
+      lcd.print(ppm);
+      lcd.setCursor(0, 1);                 
+      if (lese_tasten() == 2) {
+        lcd.print("V ");
+        lcd.print((int)(spannung * 67.76)); // factor measured voltage divider
+      } else {
+        lcd.print("Ah ");
+        lcd.print(mah);
+      }
+      lcd.setCursor(9, 1);
+      lcd.print("A ");
+      lcd.print(strom_mess);
+      } else {
+      lcd.clear();
+    }
+    #endif
+    
   unsigned long currentCounter = i;        // automatic display shutdown
   if ((unsigned long)(currentCounter - previousCounter) >= intervaldisplay) {
     display = false;
@@ -313,11 +458,19 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
   }
   if (strom_mess < polwechselschwelle)
     {
-      polwechselzeit = polwechselzeit1;
+      #ifdef MINUTES
+        polwechselzeit = polwechselzeit1*60;
+      #else
+        polwechselzeit = polwechselzeit1;
+      #endif
     }
     else
     {
-      polwechselzeit = polwechselzeit2;
+      #ifdef MINUTES
+        polwechselzeit = polwechselzeit2*60;
+      #else
+        polwechselzeit = polwechselzeit2;
+      #endif
     }
   if (!(i % (polwechselzeit)))             // Polarity change every 15 sec./ basis time
   { polaritaet = !polaritaet;
@@ -328,9 +481,17 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
     digitalWrite(START, LOW);
     if (display) {
       if (polaritaet) {
-        oled.setCursor(105, 0); oled.print("-");
+        #ifdef OLED_DISPLAY
+          oled.setCursor(105, 0); oled.print("-");
+        #else
+           lcd.setCursor(11, 0); lcd.print("-");
+        #endif
       } else {
-        oled.setCursor(105, 0); oled.print("+");
+        #ifdef OLED_DISPLAY
+          oled.setCursor(105, 0); oled.print("+");
+        #else
+          lcd.setCursor(11, 0); lcd.print("-");
+        #endif
       }
     }
   }
@@ -363,8 +524,13 @@ void loop() {
           } else {
             liter += 0.05 ;
           }
-        oled.setCursor(8, 4);
-        oled.print(liter);
+        #ifdef OLED_DISPLAY  
+          oled.setCursor(8, 4);
+          oled.print(liter);
+        #else
+          lcd.setCursor(0, 1);
+          lcd.print(liter);
+        #endif
         biep();
       }
       if (lese_tasten() == 2) {
@@ -374,8 +540,13 @@ void loop() {
           } else {
             liter -= 0.05 ;
           }
-        oled.setCursor(8, 4);
-        oled.print(liter);
+        #ifdef OLED_DISPLAY  
+          oled.setCursor(8, 4);
+          oled.print(liter);
+        #else
+          lcd.setCursor(0, 1);
+          lcd.print(liter);
+        #endif
         biep();
       }
       unsigned long currentMillis = millis();
@@ -399,9 +570,15 @@ void loop() {
           } else {
             ppm += 5 ;
           }
-        oled.setCursor(29, 4);
-        oled.print((int) ppm);
-        oled.println(" ppm  ");
+        #ifdef OLED_DISPLAY 
+          oled.setCursor(29, 4);
+          oled.print((int) ppm);
+          oled.println(" ppm  ");
+        #else
+          lcd.setCursor(0, 1);
+          lcd.print((int) ppm);
+          lcd.print(" ppm  ");
+        #endif
         biep();
       }
       if (lese_tasten() == 2) {
@@ -411,9 +588,15 @@ void loop() {
           } else {
             ppm -= 5 ;
           }
-        oled.setCursor(29, 4);
-        oled.print((int) ppm);
-        oled.println(" ppm  ");
+        #ifdef OLED_DISPLAY 
+          oled.setCursor(29, 4);
+          oled.print((int) ppm);
+          oled.println(" ppm  ");
+        #else
+          lcd.setCursor(0, 1);
+          lcd.print((int) ppm);
+          lcd.print(" ppm  ");
+        #endif
         biep();
       }
       unsigned long currentMillis = millis();
@@ -433,17 +616,45 @@ print_polw1(polwechselzeit1);
       if (lese_tasten() == 1) {
         if (polwechselzeit1 < 600)         // top max. 600 sec = 10 Min
           polwechselzeit1 += 1 ;
-        oled.setCursor(26, 4);
-        oled.print(polwechselzeit1);
-        oled.print(" Sek. ");
+        #ifdef OLED_DISPLAY
+          oled.setCursor(26, 4);
+          oled.print(polwechselzeit1);
+          #ifdef MINUTES
+            oled.print(" Min. ");
+          #else
+            oled.print(" Sek. ");
+          #endif
+          #else
+            lcd.setCursor(0, 1);
+            lcd.print(polwechselzeit1);
+          #ifdef MINUTES
+            lcd.print(" Min. ");
+          #else
+            lcd.print(" Sek. ");
+          #endif
+        #endif
         biep();
       }
       if (lese_tasten() == 2) {
         if (polwechselzeit1)               // bottom min.
           polwechselzeit1 -= 1 ;
-        oled.setCursor(26, 4);
-        oled.print(polwechselzeit1);
-        oled.print(" Sek. ");
+        #ifdef OLED_DISPLAY
+          oled.setCursor(26, 4);
+          oled.print(polwechselzeit1);
+          #ifdef MINUTES
+            oled.print(" Min. ");
+          #else
+            oled.print(" Sek. ");
+          #endif
+          #else
+            lcd.setCursor(0, 1);
+            lcd.print(polwechselzeit1);
+          #ifdef MINUTES
+            lcd.print(" Min. ");
+          #else
+            lcd.print(" Sek. ");
+          #endif
+        #endif
         biep();
       }
       unsigned long currentMillis = millis();
@@ -463,17 +674,29 @@ print_polw1(polwechselzeit1);
       if (lese_tasten() == 1) {
         if (polwechselschwelle < 10)       // top max. 10mA
           polwechselschwelle += 0.1 ;
-        oled.setCursor(26, 4);
-        oled.print(polwechselschwelle);
-        oled.print(" mA ");
+        #ifdef OLED_DISPLAY
+          oled.setCursor(26, 4);
+          oled.print(polwechselschwelle);
+          oled.print(" mA ");
+        #else
+          lcd.setCursor(0, 1);
+          lcd.print(polwechselschwelle);
+          lcd.print(" mA ");
+        #endif  
         biep();
       }
       if (lese_tasten() == 2) {
         if (polwechselschwelle)            // bottom min.
           polwechselschwelle -= 0.1 ;
-        oled.setCursor(26, 4);
-        oled.print(polwechselschwelle);
-        oled.print(" mA ");
+        #ifdef OLED_DISPLAY
+          oled.setCursor(26, 4);
+          oled.print(polwechselschwelle);
+          oled.print(" mA ");
+        #else
+          lcd.setCursor(0, 1);
+          lcd.print(polwechselschwelle);
+          lcd.print(" mA ");
+        #endif  
         biep();
       }
       unsigned long currentMillis = millis();
@@ -493,17 +716,45 @@ print_polw1(polwechselzeit1);
       if (lese_tasten() == 1) {
         if (polwechselzeit2 < 600)        // top max. 600 sec = 10 Min
           polwechselzeit2 += 1 ;
-        oled.setCursor(26, 4);
-        oled.print(polwechselzeit2);
-        oled.print(" Sek. ");
+        #ifdef OLED_DISPLAY
+          oled.setCursor(26, 4);
+          oled.print(polwechselzeit2);
+          #ifdef MINUTES
+            oled.print(" Min. ");
+          #else
+            oled.print(" Sek. ");
+          #endif
+          #else
+            lcd.setCursor(0, 1);
+            lcd.print(polwechselzeit2);
+          #ifdef MINUTES
+            lcd.print(" Min. ");
+          #else
+            lcd.print(" Sek. ");
+          #endif
+        #endif
         biep();
       }
       if (lese_tasten() == 2) {
         if (polwechselzeit2)              // bottom min.
           polwechselzeit2 -= 1 ;
-        oled.setCursor(26, 4);
-        oled.print(polwechselzeit2);
-        oled.print(" Sek. ");
+        #ifdef OLED_DISPLAY
+          oled.setCursor(26, 4);
+          oled.print(polwechselzeit2);
+          #ifdef MINUTES
+            oled.print(" Min. ");
+          #else
+            oled.print(" Sek. ");
+          #endif
+          #else
+            lcd.setCursor(0, 1);
+            lcd.print(polwechselzeit2);
+          #ifdef MINUTES
+            lcd.print(" Min. ");
+          #else
+            lcd.print(" Sek. ");
+          #endif
+        #endif 
         biep();
       }
       unsigned long currentMillis = millis();
@@ -529,21 +780,39 @@ print_polw1(polwechselzeit1);
     EEPROM.put(eeAddress, polwechselzeit2);
     eeAddress += sizeof(unsigned int); //Move address to the next byte after float 'polwechselzeit2'.
     EEPROM.put(eeAddress, polwechselschwelle);
-    
-    oled.clear();
+
+    #ifdef OLED_DISPLAY
+      oled.clear();
+    #else
+      lcd.clear();
+    #endif
     delay(1000);
     do {                                  // last user check
-      oled.setCursor(0, 0);
-      oled.print((int)ppm);
-      oled.print(" ppm");
-      oled.setCursor(0, 2);
-      oled.print(liter);
-      oled.print(" Liter");
-      oled.setCursor(0, 4);
-      oled.print((int)ppm/5);
-      oled.print(" mg/L");
-      oled.setCursor(0, 6);
-      oled.print("Wasser kalt");
+      #ifdef OLED_DISPLAY
+        oled.setCursor(0, 0);
+        oled.print((int)ppm);
+        oled.print(" ppm");
+        oled.setCursor(0, 2);
+        oled.print(liter);
+        oled.print(" Liter");
+        oled.setCursor(0, 4);
+        oled.print((int)ppm/5);
+        oled.print(" mg/L");
+        oled.setCursor(0, 6);
+        oled.print("Wasser kalt");
+      #else
+        lcd.setCursor(0, 0);
+        lcd.print("P ");
+        lcd.print((int)ppm);
+        lcd.setCursor(8, 0);
+        lcd.print("l ");
+        lcd.print(liter);
+        lcd.setCursor(0, 1);
+        lcd.print("mgl ");
+        lcd.print((int)ppm/5);
+        lcd.setCursor(0, 1);
+        lcd.print("W kalt");
+      #endif  
       taste = lese_tasten();
       zweiSekunden();                     // delay against flickering display but read keys
     } while (taste != 4 && taste != 2 && taste != 1); //action if key hit, leave while loop
@@ -562,7 +831,11 @@ print_polw1(polwechselzeit1);
     case 1:
     case 2:
     case 4:
-      oled.clear();
+      #ifdef OLED_DISPLAY
+        oled.clear();
+      #else
+        lcd.clear();
+      #endif
       zielmasse = errechne_zielmasse(ppm, liter);
       digitalWrite(START, LOW);           // Start DC/DC Converter
       TIMER_START
@@ -577,17 +850,31 @@ print_polw1(polwechselzeit1);
       digitalWrite(START, HIGH);          // Stop DC/DC Converter
       TIMER_STOP
       digitalWrite(POLW, LOW);
-      oled.setCursor(18, 0);              // Oled 1. row
-      sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
-      oled.print(stringbuf);
-      oled.setCursor(18, 2);              // Oled 2. row
-      oled.print(ppm);
-      oled.print(" ppm    ");
-      oled.setCursor(18, 4);              // Oled 3. row
-      oled.print(mah);
-      oled.print(" mAh       ");
-      oled.setCursor(18, 6);              // Oled 4. row
-      oled.print("KS fertig");
+      #ifdef OLED_DISPLAY
+        oled.setCursor(18, 0);              // Oled 1. row
+        sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
+        oled.print(stringbuf);
+        oled.setCursor(18, 2);              // Oled 2. row
+        oled.print(ppm);
+        oled.print(" ppm    ");
+        oled.setCursor(18, 4);              // Oled 3. row
+        oled.print(mah);
+        oled.print(" mAh       ");
+        oled.setCursor(18, 6);              // Oled 4. row
+        oled.print("KS fertig");
+      #else
+        lcd.print("T ");
+        sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
+        lcd.print(stringbuf);
+        lcd.setCursor(12, 0);
+        lcd.print("P ");              
+        lcd.print(ppm);
+        lcd.setCursor(0, 1);
+        lcd.print("Ah ");
+        lcd.print(mah);
+        lcd.setCursor(9, 1);              
+        lcd.print("Fertig!");
+      #endif
       for (b = 1; b <= 10; b++ ) {        // Finished and beep 10 times
         biep2();
       }
