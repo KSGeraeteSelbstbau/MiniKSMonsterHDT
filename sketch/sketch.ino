@@ -9,7 +9,7 @@
 
 ********************************************/
 
-#define OLED_DISPLAY                        //Comment out in case a 1602 LCD is used as display
+// #define OLED_DISPLAY                        //Comment out in case a 1602 LCD is used as display
 // #define MINUTES                           //Uncomment if you want minutes instead of seconds for polarity change
 
 #ifdef OLED_DISPLAY
@@ -401,61 +401,7 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
   akt_ppm = masse2ppm(masse, liter);
 
   ppm = masse2ppm(masse, liter);
-  
-  if (display) {
-    #ifdef OLED_DISPLAY
-      oled.setCursor(18, 0);                 // Oled 1. row
-      sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
-      oled.print(stringbuf);
-      oled.setCursor(18, 2);                 // Oled 2. row
-      oled.print(ppm);
-      oled.print(" ppm    ");
-      oled.setCursor(18, 4);                 // Oled 3. row
-      if (lese_tasten() == 2) {
-        oled.print((int)(spannung * 67.76)); // factor measured voltage divider
-        oled.print(" Volt      ");
-      } else {
-        oled.print(mah);
-        oled.print(" mAh       ");
-      }
-      oled.setCursor(18, 6);                 // Oled 4. row
-      oled.print(strom_mess);
-      oled.print(" mA ");
-    } else {
-      oled.clear();
-    }
-    #else
-      lcd.print("T ");                 
-      sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
-      lcd.print(stringbuf);
-      lcd.setCursor(11, 0);
-      lcd.print("P ");           
-      lcd.print(ppm);
-      lcd.setCursor(0, 1);                 
-      if (lese_tasten() == 2) {
-        lcd.print("V ");
-        lcd.print((int)(spannung * 67.76)); // factor measured voltage divider
-      } else {
-        lcd.print("Ah ");
-        lcd.print(mah);
-      }
-      lcd.setCursor(9, 1);
-      lcd.print("A ");
-      lcd.print(strom_mess);
-      } else {
-      lcd.clear();
-    }
-    #endif
-    
-  unsigned long currentCounter = i;        // automatic display shutdown
-  if ((unsigned long)(currentCounter - previousCounter) >= intervaldisplay) {
-    display = false;
-    if (lese_tasten() >= 1) {
-      previousCounter = currentCounter;
-    }
-  } else {
-    display = true;
-  }
+
   if (strom_mess < polwechselschwelle)
     {
       #ifdef MINUTES
@@ -472,31 +418,94 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
         polwechselzeit = polwechselzeit2;
       #endif
     }
+
   if (!(i % (polwechselzeit)))             // Polarity change every 15 sec./ basis time
-  { polaritaet = !polaritaet;
-    digitalWrite(START, HIGH);
-    delay(500);
-    digitalWrite(POLW, polaritaet);
-    delay(500);
-    digitalWrite(START, LOW);
-    if (display) {
-      if (polaritaet) {
-        #ifdef OLED_DISPLAY
-          oled.setCursor(105, 0); oled.print("-");
-        #else
-           lcd.setCursor(11, 0); lcd.print("-");
-        #endif
-      } else {
-        #ifdef OLED_DISPLAY
-          oled.setCursor(105, 0); oled.print("+");
-        #else
-          lcd.setCursor(11, 0); lcd.print("-");
-        #endif
-      }
-    }
-  }
+    { polaritaet = !polaritaet;
+      digitalWrite(START, HIGH);
+      delay(500);
+      digitalWrite(POLW, polaritaet);
+      delay(500);
+      digitalWrite(START, LOW);
+     }
+  
   sek++;
   i++;                                     // intervall x i = total time
+}
+
+void print_loop(void) {
+  if (display) {
+     #ifdef OLED_DISPLAY
+       oled.setCursor(18, 0);                 // Oled 1. row
+       sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
+       oled.print(stringbuf);
+       oled.setCursor(18, 2);                 // Oled 2. row
+       oled.print(ppm);
+       oled.print(" ppm    ");
+       oled.setCursor(18, 4);                 // Oled 3. row
+        if (lese_tasten() == 2) {
+          oled.print((int)(spannung * 67.76)); // factor measured voltage divider
+          oled.print(" Volt      ");
+       } else {
+          oled.print(mah);
+          oled.print(" mAh       ");
+       }
+        oled.setCursor(18, 6);                 // Oled 4. row
+        oled.print(strom_mess);
+        oled.print(" mA ");
+      } else {
+      oled.clear();
+      }
+      #else
+        lcd.setCursor(1, 0);
+        lcd.print("T ");                 
+        sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
+        lcd.print(stringbuf);
+        lcd.setCursor(11, 0);
+        lcd.print("P ");
+        sprintf(stringbuf, "%03d", (int)ppm);           
+        lcd.print(stringbuf);
+        lcd.setCursor(0, 1);                 
+        if (lese_tasten() == 2) {
+          lcd.print("V ");
+          lcd.print((int)(spannung * 67.76)); // factor measured voltage divider
+        } else {
+          lcd.print("Ah ");
+          sprintf(stringbuf, "%03d.%01d", (int)mah, (int)(mah*10)%10);
+          lcd.print(stringbuf);
+        }
+        lcd.setCursor(9, 1);
+        lcd.print("A ");
+        sprintf(stringbuf, "%02d.%02d", (int)strom_mess, (int)(strom_mess*100)%100);
+        lcd.print(stringbuf);
+        } else {
+        lcd.clear();
+      }
+      #endif
+    
+    unsigned long currentCounter = i;        // automatic display shutdown
+    if ((unsigned long)(currentCounter - previousCounter) >= intervaldisplay) {
+      display = false;
+      if (lese_tasten() >= 1) {
+        previousCounter = currentCounter;
+      }
+    } else {
+      display = true;
+    }
+    if (display) {
+        if (polaritaet) {
+          #ifdef OLED_DISPLAY
+            oled.setCursor(105, 0); oled.print("-");
+          #else
+            lcd.setCursor(0, 0); lcd.print("-");
+          #endif
+         } else {
+          #ifdef OLED_DISPLAY
+            oled.setCursor(105, 0); oled.print("+");
+          #else
+            lcd.setCursor(0, 0); lcd.print("+");
+          #endif
+        }
+     }
 }
 
 void biep(void) {
@@ -841,6 +850,7 @@ print_polw1(polwechselzeit1);
       TIMER_START
       do {                                // ACTIONLOOP UNTIL KS FINISHED
         delay(100);                       // 0,1 sec.
+        print_loop();                     // 
         if (lese_tasten() == 7) {         // shall i do  a soft reset?
           biep();
           software_Reset();
