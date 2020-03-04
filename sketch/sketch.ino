@@ -1,7 +1,7 @@
 /*******************************************
 
-  Name.......:  MiniKSMonster
-  Description:  Arduino sketch for the kolloidal silver generator Mini KS Monster is a fork of https://github.com/AgH2O/ks_shield
+  Name.......:  MiniKSMonsterEX
+  Description:  Arduino sketch for the kolloidal silver generator Mini KS MonsterEX is a fork of https://github.com/SilberMonster-de/MiniKSMonster
   Project....:  https://www.silbermonster.de
   License....:  This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
                 To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to
