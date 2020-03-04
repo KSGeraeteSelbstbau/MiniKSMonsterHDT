@@ -873,6 +873,8 @@ print_polw1(polwechselzeit1);
         oled.setCursor(18, 6);              // Oled 4. row
         oled.print("KS fertig");
       #else
+        lcd.clear();
+        lcd.setCursor(0, 0);
         lcd.print("T ");
         sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
         lcd.print(stringbuf);
@@ -881,7 +883,8 @@ print_polw1(polwechselzeit1);
         lcd.print(ppm);
         lcd.setCursor(0, 1);
         lcd.print("Ah ");
-        lcd.print(mah);
+        sprintf(stringbuf, "%03d.%01d", (int)mah, (int)(mah*10)%10);
+        lcd.print(stringbuf);
         lcd.setCursor(9, 1);              
         lcd.print("Fertig!");
       #endif
