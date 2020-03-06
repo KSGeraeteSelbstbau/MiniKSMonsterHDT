@@ -9,7 +9,7 @@
 
 ********************************************/
 
-// #define OLED_DISPLAY                        //Comment out in case a 1602 LCD is used as display
+#define OLED_DISPLAY                        //Comment out in case a 1602 LCD is used as display
 // #define MINUTES                           //Uncomment if you want minutes instead of seconds for polarity change
 
 #ifdef OLED_DISPLAY
@@ -44,13 +44,15 @@ float ppm = 50;                           // wished ppm
 boolean polaritaet = true;
 boolean wassertest = true;                // water quality test default is disable
 boolean display = true;                   // display enable
-float akt_ppm = 0;
+
 char text[32];
 
 unsigned int taste, i, eine_minute, Position, adc_wert, adc_wert_a1;
 unsigned int polwechselzeit1 = 15;
 unsigned int polwechselzeit2 = 10;
 unsigned int polwechselzeit;
+unsigned int bildwechselzeit = 10;
+boolean bildwechsel = true;
 float polwechselschwelle = 2.5;
 float spannung;
 float strom_mess;
@@ -60,6 +62,7 @@ float shunt = 47;                         // 47 Ohm 0.1%
 
 float Q_gesamt = 0;                       // new variables for ppm method
 float Q_messung = 0;
+float Q_remain = 0;
 float faktor = 0.001118083;               // = M / z * F , 107,8782/1*96485
 float mah = 0;
 float schrittweite_adc = 2.490;
@@ -67,8 +70,10 @@ float zielmasse;
 float masse;
 unsigned int intervall = 1;               // measure every 1 sec.
 long unsigned int sek = 0;
+long unsigned int T_remain = 0;
 char stringbuf[16];
-int stunde, minute, sekunde;
+unsigned int stunde; 
+unsigned char minute, sekunde;
 int b;
 
 unsigned long previousMillis = 0;
@@ -380,6 +385,19 @@ void sek2hhmmss(long int zeit) {          // format clock/counter
   }
 }
 
+void secondsToHMS( const uint32_t seconds, uint16_t &h, uint8_t &m, uint8_t &s )
+{
+    uint32_t t = seconds;
+
+    s = t % 60;
+
+    t = (t - s)/60;
+    m = t % 60;
+
+    t = (t - m)/60;
+    h = t;
+}
+
 ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
 
   adc_wert = analogRead(0);               // measure U on voltage divider
@@ -396,9 +414,10 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
   Q_messung =  strom_mess  * intervall;   // Coulomb = I * t
   Q_gesamt = Q_gesamt + Q_messung;        // Q added
   masse = (Q_gesamt / 1000) * faktor;     // Qgesamt from mC to C
-  mah = (Q_gesamt / 1000) * 0.2795476873690739;
-  sek2hhmmss(sek);
-  akt_ppm = masse2ppm(masse, liter);
+  Q_remain = ((zielmasse - masse) / faktor) * 1000;    // Q remain
+  T_remain = int (Q_remain / strom_mess);  //remaining time in sec
+   
+  mah = (Q_gesamt / 1000) * 0.2795476873690739;  
 
   ppm = masse2ppm(masse, liter);
 
@@ -419,6 +438,13 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
       #endif
     }
 
+  if (!(i % (bildwechselzeit)))            // Screenchange to V
+    { 
+      if (i != 0) {
+        bildwechsel = !bildwechsel;
+        } 
+    }
+        
   if (!(i % (polwechselzeit)))             // Polarity change every 15 sec./ basis time
     { polaritaet = !polaritaet;
       digitalWrite(START, HIGH);
@@ -432,49 +458,79 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
   i++;                                     // intervall x i = total time
 }
 
-void print_loop(void) {
+void print_loop(boolean screen) {
   if (display) {
      #ifdef OLED_DISPLAY
        oled.setCursor(18, 0);                 // Oled 1. row
-       sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
-       oled.print(stringbuf);
+       if (screen) {
+          secondsToHMS(sek, stunde, minute, sekunde);               
+          sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
+          oled.print(stringbuf);
+        } else {
+          secondsToHMS(T_remain, stunde, minute, sekunde);              
+          sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
+          oled.print(stringbuf);
+        } 
        oled.setCursor(18, 2);                 // Oled 2. row
-       oled.print(ppm);
-       oled.print(" ppm    ");
+       if (screen) {
+          oled.print(ppm);
+          oled.print(" ppm    ");
+        } else {
+          oled.print(masse2ppm(zielmasse-masse, liter));
+          oled.print(" ppm    ");
+        } 
        oled.setCursor(18, 4);                 // Oled 3. row
-        if (lese_tasten() == 2) {
-          oled.print((int)(spannung * 67.76)); // factor measured voltage divider
-          oled.print(" Volt      ");
-       } else {
+        if (screen) {
           oled.print(mah);
           oled.print(" mAh       ");
+          oled.setCursor(18, 6);                 // Oled 4. row
+          oled.print(strom_mess);
+          oled.print(" mA   ");
+       } else {
+          oled.print((int)(spannung * 67.76)); // factor measured voltage divider
+          oled.print(" Volt      ");
+          oled.setCursor(18, 6);                 // Oled 4. row
+          oled.print(strom_mess);
+          oled.print(" mA R");
        }
-        oled.setCursor(18, 6);                 // Oled 4. row
-        oled.print(strom_mess);
-        oled.print(" mA ");
+        
       } else {
       oled.clear();
       }
       #else
         lcd.setCursor(1, 0);
-        lcd.print("T ");                 
-        sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
-        lcd.print(stringbuf);
-        lcd.setCursor(11, 0);
-        lcd.print("P ");
-        sprintf(stringbuf, "%03d", (int)ppm);           
-        lcd.print(stringbuf);
-        lcd.setCursor(0, 1);                 
-        if (lese_tasten() == 2) {
-          lcd.print("V ");
-          lcd.print((int)(spannung * 67.76)); // factor measured voltage divider
+        if (screen) {
+          lcd.print("T ");
+          secondsToHMS(sek, stunde, minute, sekunde);               
+          sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
+          lcd.print(stringbuf);
         } else {
-          lcd.print("Ah ");
+          lcd.print("R ");
+          secondsToHMS(T_remain, stunde, minute, sekunde);               
+          sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
+          lcd.print(stringbuf);
+        }  
+        lcd.setCursor(11, 0);
+        if (screen) {
+          lcd.print("P ");
+          sprintf(stringbuf, "%03d", (int)ppm);           
+          lcd.print(stringbuf);
+        } else {
+          lcd.print("P ");
+          sprintf(stringbuf, "%03d", (int)masse2ppm(zielmasse-masse, liter));           
+          lcd.print(stringbuf);
+        }  
+        lcd.setCursor(0, 1);                 
+        if (screen) {
+          lcd.print("mAh");
           sprintf(stringbuf, "%03d.%01d", (int)mah, (int)(mah*10)%10);
           lcd.print(stringbuf);
+        } else {
+          lcd.print("V ");
+          lcd.print((int)(spannung * 67.76)); // factor measured voltage divider
         }
         lcd.setCursor(9, 1);
-        lcd.print("A ");
+        lcd.print("mA");
         sprintf(stringbuf, "%02d.%02d", (int)strom_mess, (int)(strom_mess*100)%100);
         lcd.print(stringbuf);
         } else {
@@ -850,7 +906,7 @@ print_polw1(polwechselzeit1);
       TIMER_START
       do {                                // ACTIONLOOP UNTIL KS FINISHED
         delay(100);                       // 0,1 sec.
-        print_loop();                     // 
+        print_loop(bildwechsel);                     // 
         if (lese_tasten() == 7) {         // shall i do  a soft reset?
           biep();
           software_Reset();
@@ -862,7 +918,8 @@ print_polw1(polwechselzeit1);
       digitalWrite(POLW, LOW);
       #ifdef OLED_DISPLAY
         oled.setCursor(18, 0);              // Oled 1. row
-        sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
+        secondsToHMS(sek, stunde, minute, sekunde);
+        sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
         oled.print(stringbuf);
         oled.setCursor(18, 2);              // Oled 2. row
         oled.print(ppm);
@@ -876,7 +933,8 @@ print_polw1(polwechselzeit1);
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("T ");
-        sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sek);
+        secondsToHMS(sek, stunde, minute, sekunde);
+        sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
         lcd.print(stringbuf);
         lcd.setCursor(12, 0);
         lcd.print("P ");              
