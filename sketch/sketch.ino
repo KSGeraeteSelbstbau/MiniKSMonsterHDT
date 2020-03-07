@@ -917,6 +917,7 @@ print_polw1(polwechselzeit1);
       TIMER_STOP
       digitalWrite(POLW, LOW);
       #ifdef OLED_DISPLAY
+        oled.clear();
         oled.setCursor(18, 0);              // Oled 1. row
         secondsToHMS(sek, stunde, minute, sekunde);
         sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
