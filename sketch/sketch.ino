@@ -15,7 +15,7 @@
 #ifdef OLED_DISPLAY
   #include "SSD1306Ascii.h"                 // ascii library for Oled
   #include "SSD1306AsciiAvrI2c.h"
-  #define I2C_ADDRESS 0x3C                  // 0X3C+SA0 - 0x3C or 0x3D
+  #define I2C_ADDRESS 0x3D                  // 0X3C+SA0 - 0x3C or 0x3D
   SSD1306AsciiAvrI2c oled;                  // create short alias
 #else
   //LCD
@@ -444,16 +444,19 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
         bildwechsel = !bildwechsel;
         } 
     }
-        
-  if (!(i % (polwechselzeit)))             // Polarity change every 15 sec./ basis time
-    { polaritaet = !polaritaet;
-      digitalWrite(START, HIGH);
-      delay(500);
-      digitalWrite(POLW, polaritaet);
-      delay(500);
-      digitalWrite(START, LOW);
-     }
-  
+
+  if (polwechselzeit != 0) 
+    {    
+    if (!(i % (polwechselzeit)))             // Polarity change every 15 sec./ basis time
+      { polaritaet = !polaritaet;
+        digitalWrite(START, HIGH);
+        delay(500);
+        digitalWrite(POLW, polaritaet);
+        delay(500);
+        digitalWrite(START, LOW);
+      }
+    }
+    
   sek++;
   i++;                                     // intervall x i = total time
 }
