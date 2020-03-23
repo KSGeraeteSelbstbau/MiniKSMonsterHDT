@@ -15,7 +15,7 @@
 #ifdef OLED_DISPLAY
   #include "SSD1306Ascii.h"                 // ascii library for Oled
   #include "SSD1306AsciiAvrI2c.h"
-  #define I2C_ADDRESS 0x3D                  // 0X3C+SA0 - 0x3C or 0x3D
+  #define I2C_ADDRESS 0x3C                  // 0X3C+SA0 - 0x3C or 0x3D
   SSD1306AsciiAvrI2c oled;                  // create short alias
 #else
   //LCD
