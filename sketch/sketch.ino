@@ -415,8 +415,11 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
   Q_gesamt = Q_gesamt + Q_messung;        // Q added
   masse = (Q_gesamt / 1000) * faktor;     // Qgesamt from mC to C
   Q_remain = ((zielmasse - masse) / faktor) * 1000;    // Q remain
-  T_remain = int (Q_remain / strom_mess);  //remaining time in sec
-   
+  
+  if (strom_mess != 0) {                     //prevent devision by zero if measured current gets zero 
+    T_remain = int (Q_remain / strom_mess);  //remaining time in sec
+  }
+       
   mah = (Q_gesamt / 1000) * 0.2795476873690739;  
 
   ppm = masse2ppm(masse, liter);
@@ -470,9 +473,13 @@ void print_loop(boolean screen) {
           sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
           oled.print(stringbuf);
         } else {
-          secondsToHMS(T_remain, stunde, minute, sekunde);              
-          sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
-          oled.print(stringbuf);
+          if (strom_mess > 1) { 
+            secondsToHMS(T_remain, stunde, minute, sekunde);              
+            sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
+            oled.print(stringbuf);
+          }else{
+            oled.print("-:--:--");             // if measured current is below 1 mA do not display remaining time
+          }
         } 
        oled.setCursor(18, 2);                 // Oled 2. row
        if (screen) {
@@ -509,9 +516,12 @@ void print_loop(boolean screen) {
           lcd.print(stringbuf);
         } else {
           lcd.print("R ");
-          secondsToHMS(T_remain, stunde, minute, sekunde);               
-          sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
-          lcd.print(stringbuf);
+          if (strom_mess > 1) {
+            secondsToHMS(T_remain, stunde, minute, sekunde);               
+            sprintf(stringbuf, "%01d:%02d:%02d", stunde, minute, sekunde);
+            lcd.print(stringbuf);
+          }else{
+            lcd.print("-:--:--");             // if measured current is below 1 mA do not display remaining time
         }  
         lcd.setCursor(11, 0);
         if (screen) {
