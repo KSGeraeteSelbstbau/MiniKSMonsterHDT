@@ -38,7 +38,7 @@
 #define TIMER_START TCCR1B |= (1 << CS12) | (0 << CS11) | (0 << CS10); // set bits
 #define TIMER_STOP  TCCR1B &= ~((1 << CS12) | (1 << CS11) | (1 << CS10)); // deletes bits
 
-float liter = 0.25;                       // set some start values
+float liter = 0.5;                       // set some start values
 float ppm = 50;                           // wished ppm
 
 boolean polaritaet = true;
@@ -48,12 +48,12 @@ boolean display = true;                   // display enable
 char text[32];
 
 unsigned int taste, i, eine_minute, Position, adc_wert, adc_wert_a1;
-unsigned int polwechselzeit1 = 15;
-unsigned int polwechselzeit2 = 10;
+unsigned int polwechselzeit1 = 10;
+//unsigned int polwechselzeit2 = 10;
 unsigned int polwechselzeit;
 unsigned int bildwechselzeit = 10;
 boolean bildwechsel = true;
-float polwechselschwelle = 2.5;
+//float polwechselschwelle = 2.5;
 float spannung;
 float strom_mess;
 float strom_wassertest;                   // current measurement for water quality test
@@ -147,10 +147,10 @@ void setup() {
     ppm = EEPROM.get(eeAddress, ppm);
     eeAddress += sizeof(float); //Move address to the next byte after float 'ppm'.
     polwechselzeit1 = EEPROM.get(eeAddress, polwechselzeit1);
-    eeAddress += sizeof(unsigned int); //Move address to the next byte after unsigned int 'polwechselzeit1'.
-    polwechselzeit2 = EEPROM.get(eeAddress, polwechselzeit2);
-    eeAddress += sizeof(unsigned int); //Move address to the next byte after unsigned int 'polwechselzeit2'.
-    polwechselschwelle = EEPROM.get(eeAddress, polwechselschwelle);
+//    eeAddress += sizeof(unsigned int); //Move address to the next byte after unsigned int 'polwechselzeit1'.
+//    polwechselzeit2 = EEPROM.get(eeAddress, polwechselzeit2);
+//    eeAddress += sizeof(unsigned int); //Move address to the next byte after unsigned int 'polwechselzeit2'.
+//    polwechselschwelle = EEPROM.get(eeAddress, polwechselschwelle);
   }
 }
 
@@ -206,7 +206,7 @@ void print_polw1(unsigned int polwechselzeit1) {
   #ifdef OLED_DISPLAY
     oled.clear();                           // 3. display output - change polarioty time
     oled.setCursor(4, 0);
-    oled.print("Umpolzeit 1");
+    oled.print("Umpolzeit");
     oled.setCursor(26, 4);
     oled.print(polwechselzeit1);
     #ifdef MINUTES
@@ -217,7 +217,7 @@ void print_polw1(unsigned int polwechselzeit1) {
   #else
     //LCD
     lcd.clear();                           // 3. display output - change polarioty time
-    lcd.print("Umpolzeit 1");
+    lcd.print("Umpolzeit");
     lcd.setCursor(0, 1);
     lcd.print(polwechselzeit1);
     #ifdef MINUTES
@@ -228,49 +228,50 @@ void print_polw1(unsigned int polwechselzeit1) {
   #endif
 }
 
-void print_schwelle(float polwechselschwelle) {
-  #ifdef OLED_DISPLAY
-    oled.clear();                           // 4. display output - change polarioty time
-    oled.setCursor(4, 0);
-    oled.print(" Schwelle");
-    oled.setCursor(26, 4);
-    oled.print(polwechselschwelle);
-    oled.print(" mA");
-  #else
-    //LCD
-    lcd.clear();                           // 4. display output - change polarioty time
-    lcd.print("Schwelle");
-    lcd.setCursor(0, 1);
-    lcd.print(polwechselschwelle);
-    lcd.print(" mA");
-   #endif
-}
+//void print_schwelle(float polwechselschwelle) {
+//  #ifdef OLED_DISPLAY
+//    oled.clear();                           // 4. display output - change polarioty time
+//    oled.setCursor(4, 0);
+//    oled.print(" Schwelle");
+//    oled.setCursor(26, 4);
+//    oled.print(polwechselschwelle);
+//    oled.print(" mA");
+//  #else
+//    //LCD
+//    lcd.clear();                           // 4. display output - change polarioty time
+//    lcd.print("Schwelle");
+//    lcd.setCursor(0, 1);
+//    lcd.print(polwechselschwelle);
+//    lcd.print(" mA");
+//   #endif
+//}
 
-void print_polw2(unsigned int polwechselzeit2) {
-  #ifdef OLED_DISPLAY
-    oled.clear();                           // 5. display output - change polarioty time
-    oled.setCursor(4, 0);
-    oled.print("Umpolzeit 2");
-    oled.setCursor(26, 4);
-    oled.print(polwechselzeit2);
-    #ifdef MINUTES
-      oled.print(" Min.");
-    #else
-      oled.print(" Sek.");
-    #endif
-  #else
-    //LCD
-    lcd.clear();                           // 5. display output - change polarioty time
-    lcd.print("Umpolzeit 2");
-    lcd.setCursor(0, 1);
-    lcd.print(polwechselzeit2);
-    #ifdef MINUTES
-      lcd.print(" Min.");
-    #else
-      lcd.print(" Sek.");
-    #endif
-  #endif
-}
+//void print_polw2(unsigned int polwechselzeit2) {
+//  #ifdef OLED_DISPLAY
+//    oled.clear();                           // 5. display output - change polarioty time
+//    oled.setCursor(4, 0);
+//    oled.print("Umpolzeit 2");
+//    oled.setCursor(26, 4);
+//    oled.print(polwechselzeit2);
+//    #ifdef MINUTES
+//      oled.print(" Min.");
+//    #else
+//      oled.print(" Sek.");
+//    #endif
+//  #else
+//    //LCD
+//    lcd.clear();                           // 5. display output - change polarioty time
+//    lcd.print("Umpolzeit 2");
+//    lcd.setCursor(0, 1);
+//    lcd.print(polwechselzeit2);
+//    #ifdef MINUTES
+//      lcd.print(" Min.");
+//    #else
+//      lcd.print(" Sek.");
+//    #endif
+//  #endif
+//}
+
 void print_wassertest(void) {             // 6. display output - water quality test and Start question
   #ifdef OLED_DISPLAY
     oled.clear();
@@ -424,22 +425,28 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
 
   ppm = masse2ppm(masse, liter);
 
-  if (strom_mess < polwechselschwelle)
-    {
-      #ifdef MINUTES
-        polwechselzeit = polwechselzeit1*60;
-      #else
-        polwechselzeit = polwechselzeit1;
-      #endif
-    }
-    else
-    {
-      #ifdef MINUTES
-        polwechselzeit = polwechselzeit2*60;
-      #else
-        polwechselzeit = polwechselzeit2;
-      #endif
-    }
+  #ifdef MINUTES
+    polwechselzeit = polwechselzeit1*60;
+  #else
+    polwechselzeit = polwechselzeit1;
+  #endif
+
+//  if (strom_mess < polwechselschwelle)
+//    {
+//      #ifdef MINUTES
+//        polwechselzeit = polwechselzeit1*60;
+//      #else
+//        polwechselzeit = polwechselzeit1;
+//      #endif
+//    }
+//    else
+//    {
+//      #ifdef MINUTES
+//        polwechselzeit = polwechselzeit2*60;
+//      #else
+//        polwechselzeit = polwechselzeit2;
+//      #endif
+//    }
 
   if (!(i % (bildwechselzeit)))            // Screenchange to V
     { 
@@ -747,106 +754,106 @@ print_polw1(polwechselzeit1);
     } while (lese_tasten() != 4);
     biep();
     
-    print_schwelle(polwechselschwelle);
-    do {                                   // choose polarity change time
-      if (lese_tasten() == 1) {
-        if (polwechselschwelle < 10)       // top max. 10mA
-          polwechselschwelle += 0.1 ;
-        #ifdef OLED_DISPLAY
-          oled.setCursor(26, 4);
-          oled.print(polwechselschwelle);
-          oled.print(" mA ");
-        #else
-          lcd.setCursor(0, 1);
-          lcd.print(polwechselschwelle);
-          lcd.print(" mA ");
-        #endif  
-        biep();
-      }
-      if (lese_tasten() == 2) {
-        if (polwechselschwelle)            // bottom min.
-          polwechselschwelle -= 0.1 ;
-        #ifdef OLED_DISPLAY
-          oled.setCursor(26, 4);
-          oled.print(polwechselschwelle);
-          oled.print(" mA ");
-        #else
-          lcd.setCursor(0, 1);
-          lcd.print(polwechselschwelle);
-          lcd.print(" mA ");
-        #endif  
-        biep();
-      }
-      unsigned long currentMillis = millis();
-      if ((unsigned long)(currentMillis - previousMillis) >= interval) {
-        delay(50);
-        if (lese_tasten() == 0) {
-          previousMillis = currentMillis;
-        }
-      } else {
-        delay(300);
-      }
-    } while (lese_tasten() != 4);
-    biep();
+//    print_schwelle(polwechselschwelle);
+//    do {                                   // choose polarity change time
+//      if (lese_tasten() == 1) {
+//        if (polwechselschwelle < 10)       // top max. 10mA
+//          polwechselschwelle += 0.1 ;
+//        #ifdef OLED_DISPLAY
+//          oled.setCursor(26, 4);
+//          oled.print(polwechselschwelle);
+//          oled.print(" mA ");
+//        #else
+//          lcd.setCursor(0, 1);
+//          lcd.print(polwechselschwelle);
+//          lcd.print(" mA ");
+//        #endif  
+//        biep();
+//      }
+//      if (lese_tasten() == 2) {
+//        if (polwechselschwelle)            // bottom min.
+//          polwechselschwelle -= 0.1 ;
+//        #ifdef OLED_DISPLAY
+//          oled.setCursor(26, 4);
+//          oled.print(polwechselschwelle);
+//          oled.print(" mA ");
+//        #else
+//          lcd.setCursor(0, 1);
+//          lcd.print(polwechselschwelle);
+//          lcd.print(" mA ");
+//        #endif  
+//        biep();
+//      }
+//      unsigned long currentMillis = millis();
+//      if ((unsigned long)(currentMillis - previousMillis) >= interval) {
+//        delay(50);
+//        if (lese_tasten() == 0) {
+//          previousMillis = currentMillis;
+//        }
+//      } else {
+//        delay(300);
+//      }
+//    } while (lese_tasten() != 4);
+//    biep();
     
-    print_polw2(polwechselzeit2);
-    do {                                  // choose polarity change time
-      if (lese_tasten() == 1) {
-        if (polwechselzeit2 < 600)        // top max. 600 sec = 10 Min
-          polwechselzeit2 += 10 ;         // polarity change +10s
-        #ifdef OLED_DISPLAY
-          oled.setCursor(26, 4);
-          oled.print(polwechselzeit2);
-          #ifdef MINUTES
-            oled.print(" Min. ");
-          #else
-            oled.print(" Sek. ");
-          #endif
-          #else
-            lcd.setCursor(0, 1);
-            lcd.print(polwechselzeit2);
-          #ifdef MINUTES
-            lcd.print(" Min. ");
-          #else
-            lcd.print(" Sek. ");
-          #endif
-        #endif
-        biep();
-      }
-      if (lese_tasten() == 2) {
-        if (polwechselzeit2)              // bottom min.
-          polwechselzeit2 -= 10 ;         // polarity change -10s
-        #ifdef OLED_DISPLAY
-          oled.setCursor(26, 4);
-          oled.print(polwechselzeit2);
-          #ifdef MINUTES
-            oled.print(" Min. ");
-          #else
-            oled.print(" Sek. ");
-          #endif
-          #else
-            lcd.setCursor(0, 1);
-            lcd.print(polwechselzeit2);
-          #ifdef MINUTES
-            lcd.print(" Min. ");
-          #else
-            lcd.print(" Sek. ");
-          #endif
-        #endif 
-        biep();
-      }
-      unsigned long currentMillis = millis();
-      if ((unsigned long)(currentMillis - previousMillis) >= interval) {
-        delay(50);
-        if (lese_tasten() == 0) {
-          previousMillis = currentMillis;
-        }
-      } else {
-        delay(300);
-      }
-    } while (lese_tasten() != 4);
-    biep();
-    
+//    print_polw2(polwechselzeit2);
+//    do {                                  // choose polarity change time
+//      if (lese_tasten() == 1) {
+//        if (polwechselzeit2 < 600)        // top max. 600 sec = 10 Min
+//          polwechselzeit2 += 10 ;         // polarity change +10s
+//        #ifdef OLED_DISPLAY
+//          oled.setCursor(26, 4);
+//          oled.print(polwechselzeit2);
+//          #ifdef MINUTES
+//            oled.print(" Min. ");
+//          #else
+//            oled.print(" Sek. ");
+//          #endif
+//          #else
+//            lcd.setCursor(0, 1);
+//            lcd.print(polwechselzeit2);
+//          #ifdef MINUTES
+//            lcd.print(" Min. ");
+//          #else
+//            lcd.print(" Sek. ");
+//          #endif
+//        #endif
+//        biep();
+//      }
+//      if (lese_tasten() == 2) {
+//        if (polwechselzeit2)              // bottom min.
+//          polwechselzeit2 -= 10 ;         // polarity change -10s
+//        #ifdef OLED_DISPLAY
+//          oled.setCursor(26, 4);
+//          oled.print(polwechselzeit2);
+//          #ifdef MINUTES
+//            oled.print(" Min. ");
+//          #else
+//            oled.print(" Sek. ");
+//          #endif
+//          #else
+//            lcd.setCursor(0, 1);
+//            lcd.print(polwechselzeit2);
+//          #ifdef MINUTES
+//            lcd.print(" Min. ");
+//          #else
+//            lcd.print(" Sek. ");
+//          #endif
+//        #endif 
+//        biep();
+//      }
+//      unsigned long currentMillis = millis();
+//      if ((unsigned long)(currentMillis - previousMillis) >= interval) {
+//        delay(50);
+//        if (lese_tasten() == 0) {
+//          previousMillis = currentMillis;
+//        }
+//      } else {
+//        delay(300);
+//      }
+//    } while (lese_tasten() != 4);
+//    biep();
+//    
     int eeAddress = 1;                    // write EEPROM
     EEPROM.write(0, 1);
     EEPROM.put(eeAddress, liter);
@@ -854,10 +861,10 @@ print_polw1(polwechselzeit1);
     EEPROM.put(eeAddress, ppm);
     eeAddress += sizeof(float); //Move address to the next byte after float 'ppm'.
     EEPROM.put(eeAddress, polwechselzeit1);
-    eeAddress += sizeof(unsigned int); //Move address to the next byte after float 'polwechselzeit1'.
-    EEPROM.put(eeAddress, polwechselzeit2);
-    eeAddress += sizeof(unsigned int); //Move address to the next byte after float 'polwechselzeit2'.
-    EEPROM.put(eeAddress, polwechselschwelle);
+//    eeAddress += sizeof(unsigned int); //Move address to the next byte after float 'polwechselzeit1'.
+//    EEPROM.put(eeAddress, polwechselzeit2);
+//    eeAddress += sizeof(unsigned int); //Move address to the next byte after float 'polwechselzeit2'.
+//    EEPROM.put(eeAddress, polwechselschwelle);
 
     #ifdef OLED_DISPLAY
       oled.clear();
