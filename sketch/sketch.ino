@@ -598,9 +598,9 @@ void loop() {
       if (lese_tasten() == 1) {
         if (liter < 5.00)
           if (liter <= 0.79) {
-            liter += 0.01 ;
+            liter += 0.1 ;
           } else {
-            liter += 0.05 ;
+            liter += 0.1 ;
           }
         #ifdef OLED_DISPLAY  
           oled.setCursor(8, 4);
@@ -614,9 +614,9 @@ void loop() {
       if (lese_tasten() == 2) {
         if (liter > 0.05)
           if (liter < 0.80) {
-            liter -= 0.01 ;
+            liter -= 0.1 ;
           } else {
-            liter -= 0.05 ;
+            liter -= 0.1 ;
           }
         #ifdef OLED_DISPLAY  
           oled.setCursor(8, 4);
@@ -644,7 +644,7 @@ void loop() {
       if (lese_tasten() == 1) {
         if (ppm < 1000)
           if (ppm < 20) {
-            ppm += 1 ;
+            ppm += 5 ;
           } else {
             ppm += 5 ;
           }
@@ -662,7 +662,7 @@ void loop() {
       if (lese_tasten() == 2) {
         if (ppm > 1)
           if (ppm < 20) {
-            ppm -= 1 ;
+            ppm -= 5 ;
           } else {
             ppm -= 5 ;
           }
@@ -693,7 +693,7 @@ print_polw1(polwechselzeit1);
     do {                                   // choose polarity change time
       if (lese_tasten() == 1) {
         if (polwechselzeit1 < 600)         // top max. 600 sec = 10 Min
-          polwechselzeit1 += 1 ;
+          polwechselzeit1 += 10 ;          // polarity change +10s
         #ifdef OLED_DISPLAY
           oled.setCursor(26, 4);
           oled.print(polwechselzeit1);
@@ -715,7 +715,7 @@ print_polw1(polwechselzeit1);
       }
       if (lese_tasten() == 2) {
         if (polwechselzeit1)               // bottom min.
-          polwechselzeit1 -= 1 ;
+          polwechselzeit1 -= 10 ;           // polarity change -10s
         #ifdef OLED_DISPLAY
           oled.setCursor(26, 4);
           oled.print(polwechselzeit1);
@@ -793,7 +793,7 @@ print_polw1(polwechselzeit1);
     do {                                  // choose polarity change time
       if (lese_tasten() == 1) {
         if (polwechselzeit2 < 600)        // top max. 600 sec = 10 Min
-          polwechselzeit2 += 1 ;
+          polwechselzeit2 += 10 ;         // polarity change +10s
         #ifdef OLED_DISPLAY
           oled.setCursor(26, 4);
           oled.print(polwechselzeit2);
@@ -815,7 +815,7 @@ print_polw1(polwechselzeit1);
       }
       if (lese_tasten() == 2) {
         if (polwechselzeit2)              // bottom min.
-          polwechselzeit2 -= 1 ;
+          polwechselzeit2 -= 10 ;         // polarity change -10s
         #ifdef OLED_DISPLAY
           oled.setCursor(26, 4);
           oled.print(polwechselzeit2);
