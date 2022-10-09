@@ -10,7 +10,7 @@
 
 ********************************************/
 
-#define VER "   v0.2"                         //Version 
+#define VER "   v0.21"                       //Version 
 #define OLED_DISPLAY                         //Comment out in case a 1602 LCD is used as display
 // #define MINUTES                           //Uncomment if you want minutes instead of seconds for polarity change
 
@@ -368,7 +368,7 @@ void zweiSekunden(void) {                 // 2 sec. delay but reads left and rig
 }
 
 void software_Reset() {                   // Restarts program from beginning but
-  //  asm volatile ("  jmp 0");           // does not reset the peripherals and registers
+    asm volatile ("  jmp 0");           // does not reset the peripherals and registers
 }
                                           // function calculates target mass
 float errechne_zielmasse(float ppm, float wasser) {
